@@ -1,9 +1,41 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C05 · Restricted Environment Networking</title><link rel="stylesheet" href="/student.css"></head><body><main class="student-shell"><div class="student-brand"><a href="/">How <span>Claude Managed Agents</span> Works</a><span class="student-badge">CONCEPT 05 / 60</span></div><div class="student-hero"><div><div class="student-eyebrow">STUDENT APPLICATION GUIDE</div><h1>Restricted Environment Networking</h1><p>Understand the concepts, follow the source code, and verify the application yourself.</p></div><img src="/astronaut.png" alt=""></div><nav class="student-nav" aria-label="Application sections"><a href="/guide.html#learning">What you will learn</a><a href="/guide.html#run-guide">How to run</a><a href="/architecture.html">Architecture &amp; workflow</a><a href="/#application-lab">Application lab</a><button id="student-theme-toggle" type="button" aria-pressed="false">Switch to dark mode</button></nav><section class="student-section"><h2>Step 0 · Prepare the application before the workflow</h2><p>Use your own Anthropic API key. This app creates an environment; an existing agent is not required.</p><p>No agent or environment provisioning is needed first. The application creates the environment when you press its Run button.</p><pre><code>npm ci
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C05 · Restricted Environment Networking</title><link rel="stylesheet" href="/student.css"><link rel="stylesheet" href="/code-highlighting.css"></head><body><main class="student-shell"><div class="student-brand"><a href="/">How <span>Claude Managed Agents</span> Works</a><span class="student-badge">CONCEPT 05 / 60</span></div><div class="student-hero"><div><div class="student-eyebrow">STUDENT APPLICATION GUIDE</div><h1>Restricted Environment Networking</h1><p>Understand the concepts, follow the source code, and verify the application yourself.</p></div><img src="/astronaut.png" alt=""></div><nav class="student-nav" aria-label="Application sections"><a href="/guide.html#learning">What you will learn</a><a href="/guide.html#run-guide">How to run</a><a href="/architecture.html">Architecture &amp; workflow</a><a href="/#application-lab">Application lab</a><button id="student-theme-toggle" type="button" aria-pressed="false">Switch to dark mode</button></nav><section class="student-section"><h2>Step 0 · Prepare the application before the workflow</h2><p>Use your own Anthropic API key. This app creates an environment; an existing agent is not required.</p><p>No agent or environment provisioning is needed first. The application creates the environment when you press its Run button.</p><pre><code class="language-powershell">npm ci
 Copy-Item .env.example .env
-npm start</code></pre><p>Set these prerequisites before starting. Credentials stay on the server and are never bundled into the browser.</p><p class="student-source">Source: .env.example · starting at line 1</p><pre><code>ANTHROPIC_API_KEY=your_api_key
-PORT=3005</code></pre></section><section class="student-section"><h2>UML sequence diagram</h2><p>Read from top to bottom. Columns are participants; arrows are ordered messages. Open the full-size image or scroll horizontally to read every label.</p><p><a href="/architecture.svg" target="_blank" rel="noopener">Open SVG</a> · <a href="/architecture.svg" download>Download SVG</a> · <a href="/architecture.png" download>Download PNG</a></p><div class="student-diagram"><img src="/architecture.svg" alt="UML sequence diagram showing the actual lesson application workflow"></div></section><section class="student-section"><h2>Walk through the application step by step</h2><article class="student-step"><h3>1 · Submit the browser request · part 1</h3><p>The browser sends a same-origin request and updates the visible evidence. It never receives the API key.</p><p class="student-source">Source: public/app.js · starting at line 1</p><pre><code>const button = document.querySelector(&#x27;#run&#x27;), status = document.querySelector(&#x27;#status&#x27;);
-fetch(&#x27;/api/config&#x27;).then(r =&gt; r.json()).then(data =&gt; { button.disabled = !data.configured; status.textContent = data.configured ? &#x27;Configuration ready. Your API key stays on the server.&#x27; : &#x27;Add your API key to .env.&#x27;; }).catch(() =&gt; { status.textContent = &#x27;Could not check configuration.&#x27;; });
-button.addEventListener(&#x27;click&#x27;, async () =&gt; { button.disabled = true; status.textContent = &#x27;Creating and retrieving the environment…&#x27;; try { const response = await fetch(&#x27;/api/environment&#x27;, { method: &#x27;POST&#x27; }); const data = await response.json(); if (!response.ok) throw new Error(data.error || &#x27;Request failed&#x27;); document.querySelector(&#x27;#envId&#x27;).textContent = data.createdId; document.querySelector(&#x27;#config&#x27;).textContent = JSON.stringify(data.environment.config, null, 2); document.querySelector(&#x27;#empty&#x27;).hidden = true; document.querySelector(&#x27;#result&#x27;).hidden = false; status.textContent = &#x27;Environment created. Save its ID for reuse.&#x27;; } catch (error) { status.textContent = error.message; } finally { button.disabled = false; } });</code></pre></article><article class="student-step"><h3>2 · Execute the provider workflow · part 1</h3><p>The Node host validates input, uses configured resources, and returns observable evidence. Read the stream ordering and failure branches.</p><p class="student-source">Source: src/server.ts · starting at line 1</p><pre><code>import { serveStudentAsset } from &quot;./student-assets&quot;;
+npm start</code></pre><p>Set these prerequisites before starting. Credentials stay on the server and are never bundled into the browser.</p><p class="student-source">Source: .env.example · starting at line 1</p><pre><code class="language-dotenv">ANTHROPIC_API_KEY=your_api_key
+PORT=3005</code></pre></section><section class="student-section"><h2>UML sequence diagram</h2><p>Read from top to bottom. Columns are participants; arrows are ordered messages. Open the full-size image or scroll horizontally to read every label.</p><p><a href="/architecture.svg" target="_blank" rel="noopener">Open SVG</a> · <a href="/architecture.svg" download>Download SVG</a> · <a href="/architecture.png" download>Download PNG</a></p><div class="student-diagram"><img src="/architecture.svg" alt="UML sequence diagram showing the actual lesson application workflow"></div></section><section class="student-section"><h2>Walk through the application step by step</h2><article class="student-step"><h3>1 · Submit the browser request · part 1</h3><p>The browser sends a same-origin request and updates the visible evidence. It never receives the API key.</p><p class="student-source">Source: public/app.js · starting at line 1</p><pre><code class="language-javascript">const button = document.querySelector(&quot;#run&quot;),
+  status = document.querySelector(&quot;#status&quot;);
+fetch(&quot;/api/config&quot;)
+  .then((r) =&gt; r.json())
+  .then((data) =&gt; {
+    button.disabled = !data.configured;
+    status.textContent = data.configured
+      ? &quot;Configuration ready. Your API key stays on the server.&quot;
+      : &quot;Add your API key to .env.&quot;;
+  })
+  .catch(() =&gt; {
+    status.textContent = &quot;Could not check configuration.&quot;;
+  });
+button.addEventListener(&quot;click&quot;, async () =&gt; {
+  button.disabled = true;
+  status.textContent = &quot;Creating and retrieving the environment…&quot;;
+  try {
+    const response = await fetch(&quot;/api/environment&quot;, { method: &quot;POST&quot; });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || &quot;Request failed&quot;);
+    document.querySelector(&quot;#envId&quot;).textContent = data.createdId;
+    document.querySelector(&quot;#config&quot;).textContent = JSON.stringify(
+      data.environment.config,
+      null,
+      2,
+    );
+    document.querySelector(&quot;#empty&quot;).hidden = true;
+    document.querySelector(&quot;#result&quot;).hidden = false;
+    status.textContent = &quot;Environment created. Save its ID for reuse.&quot;;
+  } catch (error) {
+    status.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});</code></pre></article><article class="student-step"><h3>2 · Execute the provider workflow · part 1</h3><p>The Node host validates input, uses configured resources, and returns observable evidence. Read the stream ordering and failure branches.</p><p class="student-source">Source: src/server.ts · starting at line 1</p><pre><code class="language-typescript">import { serveStudentAsset } from &quot;./student-assets&quot;;
 import http from &quot;node:http&quot;;
 import { readFile } from &quot;node:fs/promises&quot;;
 import { existsSync } from &quot;node:fs&quot;;
@@ -30,12 +62,31 @@ http.createServer(async (req, res) =&gt; {
         res.writeHead(200, { &quot;Content-Type&quot;: &quot;application/json&quot; }); res.end(JSON.stringify({ createdId: created.id, environment: retrieved }));
       } catch (error) { res.writeHead(502, { &quot;Content-Type&quot;: &quot;application/json&quot; }); res.end(JSON.stringify({ error: `Created environment ${created.id}, but retrieval failed: ${error instanceof Error ? error.message : &quot;unknown error&quot;}. Save the ID before retrying.` })); }
       return;
-    }</code></pre></article><article class="student-step"><h3>2 · Execute the provider workflow · part 2</h3><p>The Node host validates input, uses configured resources, and returns observable evidence. Read the stream ordering and failure branches.</p><p class="student-source">Source: src/server.ts · starting at line 29</p><pre><code>    const files: Record&lt;string, string&gt; = { &quot;/&quot;: &quot;index.html&quot;, &quot;/style.css&quot;: &quot;style.css&quot;, &quot;/app.js&quot;: &quot;app.js&quot;, &quot;/astronaut.png&quot;: &quot;astronaut.png&quot; };
+    }</code></pre></article><article class="student-step"><h3>2 · Execute the provider workflow · part 2</h3><p>The Node host validates input, uses configured resources, and returns observable evidence. Read the stream ordering and failure branches.</p><p class="student-source">Source: src/server.ts · starting at line 29</p><pre><code class="language-typescript">    const files: Record&lt;string, string&gt; = { &quot;/&quot;: &quot;index.html&quot;, &quot;/style.css&quot;: &quot;style.css&quot;, &quot;/app.js&quot;: &quot;app.js&quot;, &quot;/astronaut.png&quot;: &quot;astronaut.png&quot; };
     if (req.method === &quot;GET&quot; &amp;&amp; req.url &amp;&amp; files[req.url]) { const file=files[req.url]; const data=await readFile(path.join(__dirname, &quot;..&quot;, &quot;public&quot;, file)); res.writeHead(200, { &quot;Content-Type&quot;: file.endsWith(&quot;.png&quot;) ? &quot;image/png&quot; : file.endsWith(&quot;.css&quot;) ? &quot;text/css&quot; : file.endsWith(&quot;.js&quot;) ? &quot;text/javascript&quot; : &quot;text/html; charset=utf-8&quot; }); res.end(data); return; }
     res.writeHead(404).end(&quot;Not found&quot;);
   } catch (error) { res.writeHead(500, { &quot;Content-Type&quot;: &quot;application/json&quot; }); res.end(JSON.stringify({ error: error instanceof Error ? error.message : &quot;Request failed&quot; })); }
-}).listen(port, &quot;127.0.0.1&quot;, () =&gt; console.log(`Open http://127.0.0.1:${port}`));</code></pre></article><article class="student-step"><h3>3 · Understand the lesson-specific rules · part 1</h3><p>Creates a real restricted cloud environment and retrieves its configuration. Every click creates a resource; a failed retrieval is not proof creation failed. This app does not run network probes.</p><p class="student-source">Source: src/policy.ts · starting at line 1</p><pre><code>import Anthropic from &quot;@anthropic-ai/sdk&quot;;
-export const restrictedConfig = { type: &quot;cloud&quot;, networking: { type: &quot;limited&quot;, allowed_hosts: [], allow_package_managers: false, allow_mcp_servers: false } } as const;
+}).listen(port, &quot;127.0.0.1&quot;, () =&gt; console.log(`Open http://127.0.0.1:${port}`));</code></pre></article><article class="student-step"><h3>3 · Understand the lesson-specific rules · part 1</h3><p>Creates a real restricted cloud environment and retrieves its configuration. Every click creates a resource; a failed retrieval is not proof creation failed. This app does not run network probes.</p><p class="student-source">Source: src/policy.ts · starting at line 1</p><pre><code class="language-typescript">import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+export const restrictedConfig = {
+  type: &quot;cloud&quot;,
+  networking: {
+    type: &quot;limited&quot;,
+    allowed_hosts: [],
+    allow_package_managers: false,
+    allow_mcp_servers: false,
+  },
+} as const;
 export async function createRestricted(client: Anthropic) {
-  return client.beta.environments.create({ name: &quot;Lesson C05 restricted environment&quot;, config: { type: &quot;cloud&quot;, networking: { type: &quot;limited&quot;, allowed_hosts: [], allow_package_managers: false, allow_mcp_servers: false } } });
-}</code></pre></article></section><section class="student-section"><h2>What the evidence proves</h2><p class="student-note">Creates a real restricted cloud environment and retrieves its configuration. Every click creates a resource; a failed retrieval is not proof creation failed. This app does not run network probes.</p><p>Check the displayed outcome and source together. A rendered answer alone does not prove that a tool ran, a remote operation succeeded, or work was cancelled.</p></section><footer>LESSON C05 · LEARN → CONFIGURE → RUN → VERIFY<p><a href="/guide.html#learning">Learning goals</a> · <a href="/guide.html#run-guide">Run instructions</a> · <a href="/architecture.html">Workflow</a> · <a href="/#application-lab">Lab</a></p></footer></main><script src="/navigation.js"></script></body></html>
+  return client.beta.environments.create({
+    name: &quot;Lesson C05 restricted environment&quot;,
+    config: {
+      type: &quot;cloud&quot;,
+      networking: {
+        type: &quot;limited&quot;,
+        allowed_hosts: [],
+        allow_package_managers: false,
+        allow_mcp_servers: false,
+      },
+    },
+  });
+}</code></pre></article></section><section class="student-section"><h2>What the evidence proves</h2><p class="student-note">Creates a real restricted cloud environment and retrieves its configuration. Every click creates a resource; a failed retrieval is not proof creation failed. This app does not run network probes.</p><p>Check the displayed outcome and source together. A rendered answer alone does not prove that a tool ran, a remote operation succeeded, or work was cancelled.</p></section><footer>LESSON C05 · LEARN → CONFIGURE → RUN → VERIFY<p><a href="/guide.html#learning">Learning goals</a> · <a href="/guide.html#run-guide">Run instructions</a> · <a href="/architecture.html">Workflow</a> · <a href="/#application-lab">Lab</a></p></footer></main><script src="/navigation.js"></script><script defer src="/prism.js"></script><script defer src="/code-highlighting.js"></script></body></html>
