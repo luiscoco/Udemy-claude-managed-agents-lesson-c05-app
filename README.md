@@ -40,23 +40,61 @@ ANTHROPIC_API_KEY=your_api_key
 PORT=3005
 ```
 
-## How the application was developed
+## How the app was build
 
-The browser collects inputs; the Node host validates requests; the lesson implementation produces observable evidence. The architecture page walks through the real source with numbered steps, prerequisite configuration, source filenames and code excerpts.
+### 1. Declare explicit limited networking
 
-### Lesson implementation
+An empty allowed_hosts list and false package-manager/MCP exceptions make the intended networking policy visible. These network settings are separate from agent tool enablement.
 
-[src/policy.ts](https://github.com/luiscoco/Udemy-claude-managed-agents-lesson-c05-app/blob/main/src/policy.ts)
+Source: [src/policy.ts](src/policy.ts#L2)
 
 ```typescript
-import Anthropic from "@anthropic-ai/sdk";
-export const restrictedConfig = { type: "cloud", networking: { type: "limited", allowed_hosts: [], allow_package_managers: false, allow_mcp_servers: false } } as const;
+export const restrictedConfig = {
+  type: "cloud",
+  networking: {
+    type: "limited",
+    allowed_hosts: [],
+    allow_package_managers: false,
+    allow_mcp_servers: false,
+  },
+} as const;
+```
+
+### 2. Create the restricted environment
+
+The SDK call sends the explicit cloud configuration and creates a real environment resource. Each invocation creates another resource; successful configuration creation does not prove that a sandbox command ran.
+
+Source: [src/policy.ts](src/policy.ts#L3)
+
+```typescript
 export async function createRestricted(client: Anthropic) {
-  return client.beta.environments.create({ name: "Lesson C05 restricted environment", config: { type: "cloud", networking: { type: "limited", allowed_hosts: [], allow_package_managers: false, allow_mcp_servers: false } } });
+  return client.beta.environments.create({
+    name: "Lesson C05 restricted environment",
+    config: {
+      type: "cloud",
+      networking: {
+        type: "limited",
+        allowed_hosts: [],
+        allow_package_managers: false,
+        allow_mcp_servers: false,
+      },
+    },
+  });
 }
 ```
 
-Read the architecture page for the remaining source excerpts and explanations, including input handling and optional provider behavior. The diagram describes this application, rather than implying that an external integration has been implemented.
+### 3. Retrieve the stored configuration after creation
+
+The host retrieves the new resource using its returned ID rather than treating the input object as proof of stored state. If retrieval fails, preserve the creation ID before deciding whether to retry.
+
+Source: [src/server.ts](src/server.ts#L22) · selected statements
+
+```typescript
+const created = await createRestricted(client);
+
+// ... other source statements omitted ...
+const retrieved = await client.beta.environments.retrieve(created.id);
+```
 
 ## Validation
 
